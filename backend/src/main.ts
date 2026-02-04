@@ -11,20 +11,26 @@ async function bootstrap() {
     'http://localhost:5173',
     'http://localhost:5174',
     'http://localhost:4173',
-  ].filter(Boolean);
+  ].filter(Boolean) as string[];
 
   app.enableCors({
-    origin: (origin, callback) => {
+    origin: (
+      origin: string | undefined,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       // Permitir requests sin origen (como apps móviles o Postman)
       if (!origin) return callback(null, true);
 
-      if (allowedOrigins.some(allowed => origin.startsWith(allowed!))) {
+      if (allowedOrigins.some((allowed) => origin.startsWith(allowed))) {
         return callback(null, true);
       }
 
       // En producción, también permitir subdominios de render.com y onrender.com
       if (process.env.NODE_ENV === 'production') {
-        if (origin.includes('.onrender.com') || origin.includes('.render.com')) {
+        if (
+          origin.includes('.onrender.com') ||
+          origin.includes('.render.com')
+        ) {
           return callback(null, true);
         }
       }

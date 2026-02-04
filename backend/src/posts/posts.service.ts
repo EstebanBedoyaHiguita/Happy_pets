@@ -18,7 +18,10 @@ export class PostsService {
       .replace(/(^-|-$)/g, '');
   }
 
-  async create(createPostDto: CreatePostDto, authorId: string): Promise<PostDocument> {
+  async create(
+    createPostDto: CreatePostDto,
+    authorId: string,
+  ): Promise<PostDocument> {
     const slug = createPostDto.slug || this.generateSlug(createPostDto.title);
 
     const post = new this.postModel({
@@ -61,7 +64,10 @@ export class PostsService {
     return post;
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto): Promise<PostDocument> {
+  async update(
+    id: string,
+    updatePostDto: UpdatePostDto,
+  ): Promise<PostDocument> {
     if (updatePostDto.title && !updatePostDto.slug) {
       updatePostDto.slug = this.generateSlug(updatePostDto.title);
     }

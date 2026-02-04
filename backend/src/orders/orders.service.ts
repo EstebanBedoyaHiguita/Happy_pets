@@ -168,7 +168,17 @@ export class OrdersService {
         this.orderModel.countDocuments({ status: OrderStatus.PENDING }),
         this.orderModel.countDocuments({ status: OrderStatus.PAID }),
         this.orderModel.aggregate([
-          { $match: { status: { $in: [OrderStatus.PAID, OrderStatus.SHIPPED, OrderStatus.DELIVERED] } } },
+          {
+            $match: {
+              status: {
+                $in: [
+                  OrderStatus.PAID,
+                  OrderStatus.SHIPPED,
+                  OrderStatus.DELIVERED,
+                ],
+              },
+            },
+          },
           { $group: { _id: null, total: { $sum: '$total' } } },
         ]),
       ]);

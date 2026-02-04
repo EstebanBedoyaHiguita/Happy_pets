@@ -9,7 +9,9 @@ async function bootstrap() {
 
   const email = process.argv[2];
   if (!email) {
-    console.error('Por favor proporciona un email: npx ts-node src/scripts/make-admin.ts email@example.com');
+    console.error(
+      'Por favor proporciona un email: npx ts-node src/scripts/make-admin.ts email@example.com',
+    );
     process.exit(1);
   }
 

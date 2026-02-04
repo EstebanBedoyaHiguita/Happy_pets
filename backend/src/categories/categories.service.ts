@@ -24,8 +24,11 @@ export class CategoriesService {
       .replace(/(^-|-$)/g, '');
   }
 
-  async create(createCategoryDto: CreateCategoryDto): Promise<CategoryDocument> {
-    const slug = createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
+  async create(
+    createCategoryDto: CreateCategoryDto,
+  ): Promise<CategoryDocument> {
+    const slug =
+      createCategoryDto.slug || this.generateSlug(createCategoryDto.name);
 
     const existingCategory = await this.categoryModel.findOne({ slug });
     if (existingCategory) {
