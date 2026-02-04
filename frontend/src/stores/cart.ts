@@ -1,16 +1,22 @@
 import { defineStore } from 'pinia';
 import { ref, computed, watch } from 'vue';
-import api from '../services/api';
-import type { CartItem, Product } from '../types';
+import type { CartItem, Product, City } from '../types';
 
 const CART_STORAGE_KEY = 'happypets_cart';
 const SHIPPING_STORAGE_KEY = 'happypets_shipping';
 
+// Precios por zona
+const ZONE_PRICES = {
+  zone1: 10000,
+  zone2: 15000,
+};
+
 interface ShippingInfo {
   department: string;
   city: string;
+  cityId: string;
+  zone: 'zone1' | 'zone2';
   shippingCost: number;
-  isFreeShipping: boolean;
 }
 
 export const useCartStore = defineStore('cart', () => {
@@ -60,45 +66,25 @@ export const useCartStore = defineStore('cart', () => {
     items.value.reduce((sum, item) => sum + item.price * item.quantity, 0)
   );
 
-  // Envío dinámico basado en la ubicación o valor por defecto
+  // Envío basado en la ciudad seleccionada
   const shipping = computed(() => {
-    if (shippingInfo.value) {
-      return shippingInfo.value.shippingCost;
-    }
-    // Valor por defecto si no hay ubicación seleccionada
-    // Envío gratis si subtotal >= 150000
-    return subtotal.value >= 150000 ? 0 : 15000;
+    return shippingInfo.value?.shippingCost || 0;
   });
 
-  const isFreeShipping = computed(() => {
-    return shippingInfo.value?.isFreeShipping || subtotal.value >= 150000;
-  });
 
   const total = computed(() => subtotal.value + shipping.value);
 
-  async function calculateShipping(department: string, city: string) {
-    loadingShipping.value = true;
-    try {
-      const response = await api.get('/shipping/calculate', {
-        params: {
-          department,
-          city,
-          subtotal: subtotal.value,
-        },
-      });
-      shippingInfo.value = {
-        department,
-        city,
-        shippingCost: response.data.shippingCost,
-        isFreeShipping: response.data.isFreeShipping,
-      };
-      return response.data;
-    } catch (error) {
-      console.error('Error calculating shipping:', error);
-      return null;
-    } finally {
-      loadingShipping.value = false;
-    }
+  function calculateShippingByCity(city: City) {
+    const shippingCost = ZONE_PRICES[city.zone];
+
+    shippingInfo.value = {
+      department: city.department,
+      city: city.name,
+      cityId: city._id,
+      zone: city.zone,
+      shippingCost,
+    };
+    return shippingInfo.value;
   }
 
   function clearShippingInfo() {
@@ -164,7 +150,6 @@ export const useCartStore = defineStore('cart', () => {
     itemCount,
     subtotal,
     shipping,
-    isFreeShipping,
     total,
     shippingInfo,
     loadingShipping,
@@ -176,7 +161,7 @@ export const useCartStore = defineStore('cart', () => {
     toggleCart,
     openCart,
     closeCart,
-    calculateShipping,
+    calculateShippingByCity,
     clearShippingInfo,
   };
 });

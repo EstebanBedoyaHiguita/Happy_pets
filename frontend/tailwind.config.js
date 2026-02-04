@@ -13,7 +13,7 @@ export default {
         accent: '#FF9149',
         success: '#00b894',
         error: '#d63031',
-        dark: '#2d3436',
+        dark: '#2b2d2d',
       },
       fontFamily: {
         sans: ['Inter', 'system-ui', 'sans-serif'],

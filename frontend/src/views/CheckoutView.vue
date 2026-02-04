@@ -4,23 +4,28 @@ import { useRouter, RouterLink } from 'vue-router';
 import { useCartStore } from '../stores/cart';
 import { useAuthStore } from '../stores/auth';
 import api from '../services/api';
+import type { City } from '../types';
 
 const router = useRouter();
 const cartStore = useCartStore();
 const authStore = useAuthStore();
 
 const departments = ref<string[]>([]);
+const cities = ref<City[]>([]);
+const selectedCity = ref<City | null>(null);
+
 const form = ref({
   name: authStore.user?.name || '',
   email: authStore.user?.email || '',
   phone: '',
   address: '',
-  city: '',
+  cityId: '',
   department: '',
   notes: '',
 });
 
 const loading = ref(false);
+const loadingCities = ref(false);
 const orderCreated = ref<{ orderNumber: string; total: number } | null>(null);
 const error = ref('');
 
@@ -35,29 +40,60 @@ function formatPrice(price: number): string {
 // Cargar departamentos disponibles
 onMounted(async () => {
   try {
-    const response = await api.get('/shipping/departments');
+    const response = await api.get<string[]>('/cities/departments');
     departments.value = response.data;
   } catch (err) {
     console.error('Error loading departments:', err);
   }
 });
 
-// Recalcular envío cuando cambia departamento o ciudad
+// Cargar ciudades cuando cambia el departamento
 watch(
-  () => [form.value.department, form.value.city],
-  async ([department, city]) => {
-    if (department && city && city.length >= 3) {
-      await cartStore.calculateShipping(department, city);
+  () => form.value.department,
+  async (department) => {
+    if (department) {
+      loadingCities.value = true;
+      cities.value = [];
+      form.value.cityId = '';
+      selectedCity.value = null;
+      cartStore.clearShippingInfo();
+      try {
+        const response = await api.get<City[]>(`/cities/department/${encodeURIComponent(department)}`);
+        cities.value = response.data;
+      } catch (err) {
+        console.error('Error loading cities:', err);
+      } finally {
+        loadingCities.value = false;
+      }
+    }
+  }
+);
+
+// Calcular envío cuando cambia la ciudad
+watch(
+  () => form.value.cityId,
+  (cityId) => {
+    if (cityId) {
+      const city = cities.value.find(c => c._id === cityId);
+      if (city) {
+        selectedCity.value = city;
+        cartStore.calculateShippingByCity(city);
+      }
     }
   }
 );
 
 async function handleCheckout() {
   error.value = '';
+
+  if (!selectedCity.value) {
+    error.value = 'Por favor selecciona una ciudad';
+    return;
+  }
+
   loading.value = true;
 
   try {
-    // Crear la orden
     const orderData = {
       items: cartStore.items.map(item => ({
         product: item.productId,
@@ -71,10 +107,11 @@ async function handleCheckout() {
         phone: form.value.phone,
         email: form.value.email,
         address: form.value.address,
-        city: form.value.city,
+        city: selectedCity.value.name,
         department: form.value.department,
         notes: form.value.notes,
       },
+      shipping: cartStore.shipping,
     };
 
     const response = await api.post('/orders', orderData);
@@ -83,9 +120,6 @@ async function handleCheckout() {
       orderNumber: response.data.orderNumber,
       total: response.data.total,
     };
-
-    // TODO: Integrar con Wompi para el pago
-    // Por ahora mostramos confirmación de orden creada
 
   } catch (err: unknown) {
     const axiosError = err as { response?: { data?: { message?: string } } };
@@ -180,13 +214,17 @@ function finishOrder() {
               </div>
               <div>
                 <label class="block text-sm font-medium mb-2">Ciudad *</label>
-                <input
-                  v-model="form.city"
-                  type="text"
+                <select
+                  v-model="form.cityId"
                   required
                   class="input-field"
-                  placeholder="Ej: Bogota"
-                />
+                  :disabled="!form.department || loadingCities"
+                >
+                  <option value="">{{ loadingCities ? 'Cargando...' : 'Seleccionar...' }}</option>
+                  <option v-for="city in cities" :key="city._id" :value="city._id">
+                    {{ city.name }}
+                  </option>
+                </select>
               </div>
             </div>
 
@@ -200,15 +238,9 @@ function finishOrder() {
               ></textarea>
             </div>
 
-            <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
-              <p class="text-blue-800 text-sm">
-                <strong>Envio gratis</strong> en compras mayores a $150.000
-              </p>
-            </div>
-
             <button
               type="submit"
-              :disabled="loading || cartStore.loadingShipping"
+              :disabled="loading || !selectedCity"
               class="w-full btn-secondary mt-6 disabled:opacity-50"
             >
               {{ loading ? 'Procesando...' : 'Confirmar pedido' }}
@@ -239,13 +271,13 @@ function finishOrder() {
 
             <div class="flex justify-between items-center">
               <span class="text-gray-600">Envio</span>
-              <span v-if="cartStore.loadingShipping" class="text-sm text-gray-400">Calculando...</span>
-              <span v-else-if="cartStore.isFreeShipping" class="text-success font-medium">Gratis</span>
+              <span v-if="!selectedCity" class="text-sm text-gray-400">Selecciona una ciudad</span>
               <span v-else>{{ formatPrice(cartStore.shipping) }}</span>
             </div>
 
-            <div v-if="cartStore.shippingInfo" class="text-xs text-gray-500">
-              Envio a {{ cartStore.shippingInfo.city }}, {{ cartStore.shippingInfo.department }}
+            <div v-if="selectedCity" class="text-xs text-gray-500">
+              Envio a {{ selectedCity.name }}, {{ selectedCity.department }}
+              <span class="ml-1">({{ selectedCity.zone === 'zone1' ? 'Zona 1' : 'Zona 2' }})</span>
             </div>
 
             <div class="flex justify-between text-xl font-bold pt-3 border-t">

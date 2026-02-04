@@ -20,6 +20,17 @@ export interface Category {
   slug: string;
   description?: string;
   image?: string;
+  icon?: string;
+  active: boolean;
+}
+
+export type ShippingZone = 'zone1' | 'zone2';
+
+export interface City {
+  _id: string;
+  name: string;
+  department: string;
+  zone: ShippingZone;
   active: boolean;
 }
 

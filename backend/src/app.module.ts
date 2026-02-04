@@ -10,6 +10,7 @@ import { ProductsModule } from './products/products.module';
 import { PostsModule } from './posts/posts.module';
 import { ShippingModule } from './shipping/shipping.module';
 import { OrdersModule } from './orders/orders.module';
+import { CitiesModule } from './cities/cities.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { OrdersModule } from './orders/orders.module';
     PostsModule,
     ShippingModule,
     OrdersModule,
+    CitiesModule,
   ],
   controllers: [AppController],
   providers: [AppService],

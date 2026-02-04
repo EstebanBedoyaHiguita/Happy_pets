@@ -94,6 +94,11 @@ const routes = [
         name: 'admin-users',
         component: () => import('../views/admin/UsersView.vue'),
       },
+      {
+        path: 'ciudades',
+        name: 'admin-cities',
+        component: () => import('../views/admin/CitiesView.vue'),
+      },
     ],
   },
 ];

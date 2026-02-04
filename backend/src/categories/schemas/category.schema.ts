@@ -17,6 +17,9 @@ export class Category {
   @Prop()
   image: string;
 
+  @Prop()
+  icon: string;
+
   @Prop({ default: true })
   active: boolean;
 }

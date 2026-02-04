@@ -9,6 +9,7 @@ const menuItems = [
   { name: 'Dashboard', to: '/admin', icon: '📊' },
   { name: 'Productos', to: '/admin/productos', icon: '📦' },
   { name: 'Categorias', to: '/admin/categorias', icon: '🏷️' },
+  { name: 'Ciudades', to: '/admin/ciudades', icon: '🚚' },
   { name: 'Blog', to: '/admin/blog', icon: '📝' },
   { name: 'Pedidos', to: '/admin/pedidos', icon: '🛒' },
   { name: 'Usuarios', to: '/admin/usuarios', icon: '👥', adminOnly: true },

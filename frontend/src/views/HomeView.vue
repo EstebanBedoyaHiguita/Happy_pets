@@ -3,20 +3,23 @@ import { ref, onMounted } from 'vue';
 import { RouterLink } from 'vue-router';
 import ProductCard from '../components/ProductCard.vue';
 import api from '../services/api';
-import type { Product } from '../types';
+import type { Product, Category } from '../types';
 
 const featuredProducts = ref<Product[]>([]);
 const bestSellers = ref<Product[]>([]);
+const categories = ref<Category[]>([]);
 const loading = ref(true);
 
 onMounted(async () => {
   try {
-    const [featuredRes, bestSellersRes] = await Promise.all([
+    const [featuredRes, bestSellersRes, categoriesRes] = await Promise.all([
       api.get<Product[]>('/products/featured?limit=4'),
       api.get<Product[]>('/products/best-sellers?limit=4'),
+      api.get<Category[]>('/categories?active=true'),
     ]);
     featuredProducts.value = featuredRes.data;
     bestSellers.value = bestSellersRes.data;
+    categories.value = categoriesRes.data;
   } catch (error) {
     console.error('Error loading products:', error);
   } finally {
@@ -37,7 +40,7 @@ onMounted(async () => {
               Todo para tu
               <span class="text-secondary">mejor amigo</span>
             </h1>
-            <p class="text-lg text-gray-300 mb-8 max-w-lg">
+            <p class="text-lg text-white mb-8 max-w-lg">
               Descubre nuestra seleccion de productos premium para mascotas.
               Calidad, amor y cuidado en cada producto.
             </p>
@@ -70,23 +73,21 @@ onMounted(async () => {
     <!-- Categories Preview -->
     <section class="py-16 bg-white">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div class="grid grid-cols-2 md:grid-cols-4 gap-6">
-          <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group">
-            <span class="text-5xl mb-3 block group-hover:scale-110 transition-transform">🦴</span>
-            <h3 class="font-semibold text-dark">Alimentos</h3>
-          </div>
-          <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group">
-            <span class="text-5xl mb-3 block group-hover:scale-110 transition-transform">🎾</span>
-            <h3 class="font-semibold text-dark">Juguetes</h3>
-          </div>
-          <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group">
-            <span class="text-5xl mb-3 block group-hover:scale-110 transition-transform">🛏️</span>
-            <h3 class="font-semibold text-dark">Accesorios</h3>
-          </div>
-          <div class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group">
-            <span class="text-5xl mb-3 block group-hover:scale-110 transition-transform">🧴</span>
-            <h3 class="font-semibold text-dark">Higiene</h3>
-          </div>
+        <div v-if="categories.length > 0" class="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <RouterLink
+            v-for="category in categories"
+            :key="category._id"
+            :to="`/tienda?category=${category.slug}`"
+            class="bg-gray-50 rounded-2xl p-6 text-center hover:shadow-lg transition-shadow cursor-pointer group"
+          >
+            <span v-if="category.icon" class="text-5xl mb-3 block group-hover:scale-110 transition-transform">{{ category.icon }}</span>
+            <img v-else-if="category.image" :src="category.image" :alt="category.name" class="w-16 h-16 mx-auto mb-3 object-contain group-hover:scale-110 transition-transform" />
+            <span v-else class="text-5xl mb-3 block group-hover:scale-110 transition-transform">🐾</span>
+            <h3 class="font-semibold text-dark">{{ category.name }}</h3>
+          </RouterLink>
+        </div>
+        <div v-else-if="!loading" class="text-center py-8 text-gray-500">
+          <p>No hay categorías disponibles</p>
         </div>
       </div>
     </section>
@@ -177,10 +178,10 @@ onMounted(async () => {
     <section class="py-16 bg-secondary">
       <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
         <h2 class="text-3xl font-bold text-primary mb-4">
-          Envio gratis en compras mayores a $100.000
+          Comienza hoy a darle lo mejor a tu mascota
         </h2>
         <p class="text-primary/80 mb-8 max-w-2xl mx-auto">
-          Aprovecha nuestras ofertas especiales y recibe tus productos en la puerta de tu casa sin costo adicional.
+          Recibe tus productos en la puerta de tu casa 🐶.
         </p>
         <RouterLink to="/tienda" class="btn-primary">
           Comprar ahora
